@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vastu AI — Expert Property Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-dark: #0F6E56;
+    --green-light: #E1F5EE;
+    --green-mid: #5DCAA5;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --text: #1a1a1a;
+    --text-muted: #6b7280;
+    --border: rgba(0,0,0,0.1);
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --surface2: #f4f3ef;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner {
+    max-width: 820px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: white; font-family: 'Playfair Display', serif;
+  }
+  .logo-text { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; }
+  .logo-sub { font-size: 11px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: -2px; }
+  .header-badge {
+    background: var(--green-light); color: var(--green-dark);
+    font-size: 11px; font-weight: 500; padding: 4px 12px;
+    border-radius: 20px; letter-spacing: 0.03em;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0d4f3c 0%, #1D9E75 60%, #5DCAA5 100%);
+    padding: 4rem 2rem 3rem;
+    text-align: center; color: white;
+  }
+  .hero-eyebrow {
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    opacity: 0.75; margin-bottom: 1rem;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 600; line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+  .hero p {
+    font-size: 16px; opacity: 0.85; max-width: 520px;
+    margin: 0 auto 2rem; line-height: 1.6; font-weight: 300;
+  }
+  .hero-cta {
+    display: inline-block;
+    background: white; color: var(--green-dark);
+    padding: 14px 32px; border-radius: var(--radius);
+    font-size: 15px; font-weight: 500; cursor: pointer;
+    border: none; transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.2); }
+  .hero-features {
+    display: flex; gap: 2rem; justify-content: center;
+    margin-top: 2.5rem; flex-wrap: wrap;
+  }
+  .hero-feat { font-size: 13px; opacity: 0.8; display: flex; align-items: center; gap: 6px; }
+  .hero-feat::before { content: '✓'; opacity: 1; font-weight: 600; }
+
+  /* MAIN LAYOUT */
+  .main { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  /* PROGRESS */
+  .progress-wrap { margin-bottom: 2.5rem; }
+  .progress-steps { display: flex; align-items: center; gap: 0; }
+  .prog-step {
+    display: flex; flex-direction: column; align-items: center;
+    flex: 1; position: relative;
+  }
+  .prog-step:not(:last-child)::after {
+    content: ''; position: absolute;
+    top: 16px; left: 50%; width: 100%; height: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .prog-step.done:not(:last-child)::after { background: var(--green); }
+  .prog-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500; color: var(--text-muted);
+    background: var(--surface); z-index: 1;
+    transition: all 0.3s;
+  }
+  .prog-step.active .prog-dot { border-color: var(--green); color: var(--green); background: var(--green-light); }
+  .prog-step.done .prog-dot { border-color: var(--green); background: var(--green); color: white; }
+  .prog-label { font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center; font-weight: 400; }
+  .prog-step.active .prog-label { color: var(--green); font-weight: 500; }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .card-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 1.75rem; line-height: 1.5; }
+
+  /* FORM ELEMENTS */
+  .field { margin-bottom: 1.25rem; }
+  .field label {
+    display: block; font-size: 13px; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 7px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  input[type="text"], select, textarea {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius); font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface); color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none; -webkit-appearance: none;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+  }
+  textarea { height: 85px; resize: vertical; line-height: 1.6; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; cursor: pointer; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  /* DIRECTION BUTTONS */
+  .dir-btn {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 6px; text-align: center; cursor: pointer;
+    font-size: 13px; font-family: 'DM Sans', sans-serif;
+    background: var(--surface); color: var(--text);
+    transition: all 0.15s; font-weight: 400;
+  }
+  .dir-btn:hover { background: var(--green-light); border-color: var(--green-mid); }
+  .dir-btn.selected { border-color: var(--green); background: var(--green-light); color: var(--green-dark); font-weight: 500; }
+
+  /* SECTION DIVIDER */
+  .section-divider {
+    font-size: 11px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 1.75rem 0 1rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-divider::before, .section-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* NAV BUTTONS */
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; }
+  .btn-back {
+    background: none; border: 1px solid var(--border);
+    padding: 10px 20px; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-back:hover { border-color: var(--text-muted); color: var(--text); }
+  .btn-next {
+    background: var(--green); color: white; border: none;
+    padding: 11px 28px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-next:hover { background: var(--green-dark); transform: translateY(-1px); }
+  .btn-pdf {
+    background: var(--blue); color: white; border: none;
+    padding: 11px 22px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn-pdf:hover { background: #0C447C; }
+  .btn-pdf:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-outline {
+    background: none; border: 1px solid var(--border);
+    padding: 10px 18px; border-radius: var(--radius);
+    font-size: 13px; cursor: pointer; color: var(--text);
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .btn-outline:hover { background: var(--surface2); }
+
+  /* STEPS */
+  .step { display: none; }
+  .step.active { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* SUMMARY BOX */
+  .summary-box {
+    background: var(--surface2);
+    border-radius: var(--radius); padding: 1.25rem 1.5rem;
+    font-size: 13px; line-height: 1.9; color: var(--text-muted);
+    white-space: pre-wrap; margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+  }
+
+  /* LOADING */
+  .loading-wrap { text-align: center; padding: 4rem 1rem; }
+  .om-spinner {
+    width: 60px; height: 60px; margin: 0 auto 1.5rem;
+    border: 3px solid var(--green-light);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-title { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 8px; }
+  .loading-sub { font-size: 14px; color: var(--text-muted); }
+
+  /* REPORT */
+  .report-wrap { display: none; animation: fadeIn 0.4s ease; }
+  .report-wrap.visible { display: block; }
+
+  .score-banner {
+    background: linear-gradient(135deg, #0d4f3c, #1D9E75);
+    color: white; border-radius: var(--radius-lg);
+    padding: 2rem; text-align: center; margin-bottom: 2rem;
+    position: relative; overflow: hidden;
+  }
+  .score-banner::before {
+    content: ''; position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .score-num { font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 600; line-height: 1; }
+  .score-denom { font-size: 22px; opacity: 0.6; }
+  .score-label { font-size: 13px; opacity: 0.75; margin-top: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .score-rating { display: inline-block; margin-top: 10px; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; background: rgba(255,255,255,0.2); }
+
+  .report-body {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    font-size: 14px; line-height: 1.85;
+    white-space: pre-wrap; color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+
+  .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .error-banner {
+    background: var(--red-light); border: 1px solid #F09595;
+    border-radius: var(--radius); padding: 1rem 1.25rem;
+    font-size: 14px; color: var(--red); margin-top: 1rem;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 2rem;
+    font-size: 12px; color: var(--text-muted);
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 600px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .hero { padding: 2.5rem 1.25rem 2rem; }
+    .card { padding: 1.5rem 1.25rem; }
+    .hero-features { flex-direction: column; gap: 0.75rem; align-items: center; }
+    .prog-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">व</div>
+      <div>
+        <div class="logo-text">Vastu AI</div>
+        <div class="logo-sub">Classical Indian Vastu Shastra</div>
+      </div>
+    </div>
+    <div class="header-badge">Powered by AI</div>
+  </div>
+</header>
+
+<div class="hero" id="heroSection">
+  <p class="hero-eyebrow">Based on Manasara · Mayamata · Brihat Samhita</p>
+  <h1>Your Personal Vastu Expert,<br/>Available Anytime</h1>
+  <p>Get a complete Vastu Shastra analysis of your property — doshas identified, remedies prioritised, action plan generated. As thorough as a senior pandit consultation.</p>
+  <button class="hero-cta" onclick="startAnalysis()">Begin Property Analysis →</button>
+  <div class="hero-features">
+    <span class="hero-feat">Classical Indian Vastu only</span>
+    <span class="hero-feat">16-direction zone analysis</span>
+    <span class="hero-feat">Downloadable PDF report</span>
+    <span class="hero-feat">All property types</span>
+  </div>
+</div>
+
+<div class="main" id="mainSection" style="display:none;">
+
+  <!-- PROGRESS -->
+  <div class="progress-wrap">
+    <div class="progress-steps">
+      <div class="prog-step active" id="ps0"><div class="prog-dot">1</div><div class="prog-label">Property</div></div>
+      <div class="prog-step" id="ps1"><div class="prog-dot">2</div><div class="prog-label">Rooms</div></div>
+      <div class="prog-step" id="ps2"><div class="prog-dot">3</div><div class="prog-label">Elements</div></div>
+      <div class="prog-step" id="ps3"><div class="prog-dot">4</div><div class="prog-label">Slope & Doors</div></div>
+      <div class="prog-step" id="ps4"><div class="prog-dot">5</div><div class="prog-label">Generate</div></div>
+    </div>
+  </div>
+
+  <!-- STEP 0 -->
+  <div class="step active" id="step0">
+    <div class="card">
+      <div class="card-title">Property details</div>
+      <div class="card-sub">Tell us about the property you want to analyse</div>
+
+      <div class="field">
+        <label>Property type</label>
+        <select id="propType">
+          <option value="">Select type</option>
+          <option>Residential home / flat</option>
+          <option>Plot of land (under consideration)</option>
+          <option>Under-construction home</option>
+          <option>Commercial office / shop</option>
+          <option>Factory / warehouse</option>
+          <option>Farmhouse / bungalow</option>
+        </select>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Approximate size</label><input type="text" id="propSize" placeholder="e.g. 1200 sq ft, 30×40 plot" /></div>
+        <div class="field">
+          <label>Property shape</label>
+          <select id="propShape">
+            <option value="">Select shape</option>
+            <option value="square (ideal)">Square (ideal)</option>
+            <option>Rectangular</option>
+            <option>Irregular / L-shaped</option>
+            <option>Triangular</option>
+            <option>Circular / curved</option>
+            <option value="Gaumukhi (extended corner)">Gaumukhi (extended corner)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Main entrance faces which direction?</label>
+        <div class="grid-3" style="margin-top:6px">
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">North</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">North-East</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">East</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">South-East</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">South</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">South-West</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">West</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">North-West</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainFacing')">Not sure</div>
+        </div>
+        <input type="hidden" id="mainFacing" />
+      </div>
+
+      <div class="field">
+        <label>Surrounding roads (select all that apply)</label>
+        <div class="grid-3" id="roadDirs" style="margin-top:6px">
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">North road</div>
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">North-East road</div>
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">East road</div>
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">South-East road</div>
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">South road</div>
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">South-West road</div>
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">West road</div>
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">North-West road</div>
+          <div class="dir-btn" onclick="toggleMulti(this,'roads')">No road nearby</div>
+        </div>
+        <input type="hidden" id="roads" />
+      </div>
+
+      <div class="nav-row"><span></span><button class="btn-next" onclick="goStep(1)">Next <span>→</span></button></div>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step" id="step1">
+    <div class="card">
+      <div class="card-title">Room layout by direction</div>
+      <div class="card-sub">Which rooms are in each zone? Map your property to the 8 directions and the centre.</div>
+
+      <div class="section-divider">Cardinal directions</div>
+      <div class="grid-2">
+        <div class="field"><label>North zone</label><select id="north"><option value="">—</option><option>Master bedroom</option><option>Bedroom (guest)</option><option>Kitchen</option><option>Bathroom / toilet</option><option>Living room / hall</option><option>Pooja room / temple</option><option>Study / office room</option><option>Dining room</option><option>Storeroom</option><option>Staircase</option><option>Open / empty space</option><option>Garage / parking</option><option>Balcony / terrace</option></select></div>
+        <div class="field"><label>South zone</label><select id="south"><option value="">—</option><option>Master bedroom</option><option>Bedroom (guest)</option><option>Kitchen</option><option>Bathroom / toilet</option><option>Living room / hall</option><option>Pooja room / temple</option><option>Study / office room</option><option>Dining room</option><option>Storeroom</option><option>Staircase</option><option>Open / empty space</option><option>Garage / parking</option><option>Balcony / terrace</option></select></div>
+        <div class="field"><label>East zone</label><select id="east"><option value="">—</option><option>Master bedroom</option><option>Bedroom (guest)</option><option>Kitchen</option><option>Bathroom / toilet</option><option>Living room / hall</option><option>Pooja room / temple</option><option>Study / office room</option><option>Dining room</option><option>Storeroom</option><option>Staircase</option><option>Open / empty space</option><option>Garage / parking</option><option>Balcony / terrace</option></select></div>
+        <div class="field"><label>West zone</label><select id="west"><option value="">—</option><option>Master bedroom</option><option>Bedroom (guest)</option><option>Kitchen</option><option>Bathroom / toilet</option><option>Living room / hall</option><option>Pooja room / temple</option><option>Study / office room</option><option>Dining room</option><option>Storeroom</option><option>Staircase</option><option>Open / empty space</option><option>Garage / parking</option><option>Balcony / terrace</option></select></div>
+      </div>
+
+      <div class="section-divider">Corner (diagonal) directions</div>
+      <div class="grid-2">
+        <div class="field"><label>North-East — Ishaan kona</label><select id="ne"><option value="">—</option><option>Master bedroom</option><option>Bedroom (guest)</option><option>Kitchen</option><option>Bathroom / toilet</option><option>Living room / hall</option><option>Pooja room / temple</option><option>Study / office room</option><option>Dining room</option><option>Storeroom</option><option>Staircase</option><option>Open / empty space</option><option>Water body / sump</option><option>Garage / parking</option><option>Balcony / terrace</option></select></div>
+        <div class="field"><label>South-East — Agni kona</label><select id="se"><option value="">—</option><option>Master bedroom</option><option>Bedroom (guest)</option><option>Kitchen</option><option>Bathroom / toilet</option><option>Living room / hall</option><option>Pooja room / temple</option><option>Study / office room</option><option>Dining room</option><option>Storeroom</option><option>Staircase</option><option>Open / empty space</option><option>Garage / parking</option><option>Balcony / terrace</option></select></div>
+        <div class="field"><label>South-West — Nairutya kona</label><select id="sw"><option value="">—</option><option>Master bedroom</option><option>Bedroom (guest)</option><option>Kitchen</option><option>Bathroom / toilet</option><option>Living room / hall</option><option>Pooja room / temple</option><option>Study / office room</option><option>Dining room</option><option>Storeroom</option><option>Staircase</option><option>Open / empty space</option><option>Garage / parking</option><option>Balcony / terrace</option></select></div>
+        <div class="field"><label>North-West — Vayavya kona</label><select id="nw"><option value="">—</option><option>Master bedroom</option><option>Bedroom (guest)</option><option>Kitchen</option><option>Bathroom / toilet</option><option>Living room / hall</option><option>Pooja room / temple</option><option>Study / office room</option><option>Dining room</option><option>Storeroom</option><option>Staircase</option><option>Open / empty space</option><option>Garage / parking</option><option>Balcony / terrace</option></select></div>
+      </div>
+
+      <div class="section-divider">Centre</div>
+      <div class="field"><label>Brahmasthana — centre of property</label><select id="center"><option value="">—</option><option value="Open / free space (ideal)">Open / free space (ideal)</option><option>Living room / hall</option><option>Pillar or column</option><option>Staircase</option><option>Toilet / bathroom</option><option>Kitchen</option><option>Bedroom</option><option>Storeroom</option></select></div>
+
+      <div class="nav-row"><button class="btn-back" onclick="goStep(0)">← Back</button><button class="btn-next" onclick="goStep(2)">Next →</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step" id="step2">
+    <div class="card">
+      <div class="card-title">Water, fire & special elements</div>
+      <div class="card-sub">These carry the strongest Vastu influence — be as accurate as possible.</div>
+
+      <div class="section-divider">Water bodies</div>
+      <div class="grid-2">
+        <div class="field"><label>Underground water tank / sump</label><select id="sump"><option value="none / not applicable">None / not applicable</option><option value="North-East (ideal)">North-East (ideal)</option><option>North</option><option>East</option><option>South-East</option><option>South</option><option>South-West</option><option>West</option><option>North-West</option><option>Centre</option></select></div>
+        <div class="field"><label>Overhead water tank</label><select id="oht"><option value="none / not applicable">None / not applicable</option><option value="South-West (ideal)">South-West (ideal)</option><option>West</option><option>South</option><option>North-East</option><option>North</option><option>East</option><option>Centre</option></select></div>
+        <div class="field"><label>Borewell / open well</label><select id="borewell"><option value="none / not applicable">None / not applicable</option><option>North-East</option><option>North</option><option>East</option><option>South</option><option>South-West</option><option>West</option><option>Centre</option></select></div>
+        <div class="field"><label>Swimming pool / water feature</label><select id="pool"><option value="none / not applicable">None / not applicable</option><option>North-East</option><option>North</option><option>East</option><option>South</option><option>South-West</option><option>West</option><option>Centre</option></select></div>
+      </div>
+
+      <div class="section-divider">Fire & energy</div>
+      <div class="grid-2">
+        <div class="field"><label>Kitchen stove direction (cook faces)</label><select id="stove"><option value="">Not specified</option><option value="East-facing (ideal)">East-facing (ideal)</option><option>South-East facing</option><option>West facing</option><option>North facing</option><option>South facing</option></select></div>
+        <div class="field"><label>Electric meter / generator / DG set</label><select id="electric"><option value="none / not applicable">None / not applicable</option><option value="South-East (ideal)">South-East (ideal)</option><option>North-West</option><option>North-East</option><option>South-West</option><option>Centre</option></select></div>
+      </div>
+
+      <div class="section-divider">Structural elements</div>
+      <div class="grid-2">
+        <div class="field"><label>Staircase location</label><select id="stair"><option value="none / not applicable">None / not applicable</option><option>South</option><option>West</option><option value="South-West (acceptable)">South-West (acceptable)</option><option>North-East</option><option>East</option><option>North</option><option>Centre / Brahmasthana</option></select></div>
+        <div class="field"><label>Heavy storage / safe / vault</label><select id="vault"><option value="none / not applicable">None / not applicable</option><option>South-West</option><option>South</option><option>West</option><option>North</option><option>East</option><option>North-East</option><option>Centre</option></select></div>
+      </div>
+
+      <div class="nav-row"><button class="btn-back" onclick="goStep(1)">← Back</button><button class="btn-next" onclick="goStep(3)">Next →</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step" id="step3">
+    <div class="card">
+      <div class="card-title">Slope, light & doors</div>
+      <div class="card-sub">Final structural details for the complete analysis</div>
+
+      <div class="field"><label>Land / floor slope direction</label><select id="slope"><option value="no visible slope / flat">No visible slope / flat</option><option value="sloping towards North-East (ideal)">Sloping towards North-East (ideal)</option><option value="sloping towards North">Sloping towards North</option><option value="sloping towards East">Sloping towards East</option><option value="sloping towards South">Sloping towards South</option><option value="sloping towards West">Sloping towards West</option><option value="sloping towards South-West">Sloping towards South-West</option><option value="sloping towards South-East">Sloping towards South-East</option></select></div>
+
+      <div class="field">
+        <label>Main door direction</label>
+        <div class="grid-3" style="margin-top:6px">
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">North</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">North-East</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">East</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">South-East</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">South</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">South-West</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">West</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">North-West</div>
+          <div class="dir-btn" onclick="toggleDir(this,'mainDoor')">Not sure</div>
+        </div>
+        <input type="hidden" id="mainDoor" />
+      </div>
+
+      <div class="grid-2">
+        <div class="field"><label>Maximum sunlight enters from</label><select id="sunlight"><option value="East / North-East (ideal)">East / North-East (ideal)</option><option>North</option><option>South</option><option>West</option><option>South-West</option></select></div>
+        <div class="field"><label>Any cut corner in the plot?</label><select id="cutCorner"><option value="no cut corner">No cut corner</option><option value="North-East corner cut (severe dosha)">North-East corner cut (severe dosha)</option><option value="South-West corner cut">South-West corner cut</option><option value="North-West corner cut">North-West corner cut</option><option value="South-East corner cut">South-East corner cut</option></select></div>
+      </div>
+
+      <div class="field"><label>Problems being experienced in this property (optional)</label><textarea id="problems" placeholder="e.g. financial losses, frequent illness, disputes, no career progress, delayed marriage, children's problems, accidents..."></textarea></div>
+      <div class="field"><label>Any other details for the expert? (optional)</label><textarea id="extra" placeholder="e.g. temple nearby, tall building casting shadow on North-East, basement, old construction, shared wall, underground parking..."></textarea></div>
+
+      <div class="nav-row"><button class="btn-back" onclick="goStep(2)">← Back</button><button class="btn-next" onclick="goStep(4)">Next →</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step" id="step4">
+    <div class="card">
+      <div class="card-title">Ready to generate your report</div>
+      <div class="card-sub">Review the summary below, then generate your full Vastu analysis</div>
+      <div class="summary-box" id="summaryBox"></div>
+      <div class="nav-row">
+        <button class="btn-back" onclick="goStep(3)">← Back</button>
+        <button class="btn-next" onclick="generateReport()">Generate Vastu Report →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loadingWrap" style="display:none;">
+    <div class="loading-wrap">
+      <div class="om-spinner"></div>
+      <div class="loading-title">Analysing your property...</div>
+      <div class="loading-sub" id="loadingMsg">Consulting classical Vastu Shastra texts...</div>
+    </div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="report-wrap" id="reportWrap">
+    <div class="score-banner" id="scoreBanner">
+      <div><span class="score-num" id="scoreNum">--</span><span class="score-denom">/100</span></div>
+      <div class="score-label">Vastu Compatibility Score</div>
+      <div class="score-rating" id="scoreRating">Analysing...</div>
+    </div>
+
+    <div class="report-body" id="reportBody"></div>
+
+    <div class="action-buttons">
+      <button class="btn-pdf" id="pdfBtn" onclick="downloadPDF()">
+        ⬇ Download PDF Report
+      </button>
+      <button class="btn-outline" onclick="resetAll()">Analyse Another Property</button>
+    </div>
+    <div id="errorBanner" style="display:none;" class="error-banner"></div>
+  </div>
+
+</div><!-- /main -->
+
+<footer>
+  <p>Vastu AI &nbsp;·&nbsp; Based on classical texts: Manasara, Mayamata, Brihat Samhita &nbsp;·&nbsp; For guidance purposes</p>
+</footer>
+
+<script>
+let fd = {};
+let reportText = '';
+
+function startAnalysis() {
+  document.getElementById('heroSection').style.display = 'none';
+  document.getElementById('mainSection').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function toggleDir(el, fieldId) {
+  el.closest('.grid-3').querySelectorAll('.dir-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById(fieldId).value = el.textContent.trim();
+}
+
+function toggleMulti(el, fieldId) {
+  el.classList.toggle('selected');
+  const vals = Array.from(el.closest('#roadDirs').querySelectorAll('.dir-btn.selected')).map(b => b.textContent.trim());
+  document.getElementById(fieldId).value = vals.join(', ') || '';
+}
+
+function goStep(n) {
+  document.querySelectorAll('.step').forEach((s, i) => s.classList.toggle('active', i === n));
+  for (let i = 0; i < 5; i++) {
+    const ps = document.getElementById('ps' + i);
+    ps.className = 'prog-step' + (i < n ? ' done' : i === n ? ' active' : '');
+    ps.querySelector('.prog-dot').textContent = i < n ? '✓' : (i + 1);
+  }
+  if (n === 4) buildSummary();
+  window.scrollTo(0, 0);
+}
+
+function g(id) { return document.getElementById(id)?.value || ''; }
+
+function buildSummary() {
+  fd = {
+    propType: g('propType'), propSize: g('propSize'), propShape: g('propShape'),
+    mainFacing: g('mainFacing'), roads: g('roads'),
+    north: g('north'), south: g('south'), east: g('east'), west: g('west'),
+    ne: g('ne'), se: g('se'), sw: g('sw'), nw: g('nw'), center: g('center'),
+    sump: g('sump'), oht: g('oht'), borewell: g('borewell'), pool: g('pool'),
+    stove: g('stove'), electric: g('electric'), stair: g('stair'), vault: g('vault'),
+    slope: g('slope'), mainDoor: g('mainDoor'), sunlight: g('sunlight'),
+    cutCorner: g('cutCorner'), problems: g('problems'), extra: g('extra')
+  };
+  const lines = [
+    `Property: ${fd.propType || '—'}  |  Size: ${fd.propSize || '—'}  |  Shape: ${fd.propShape || '—'}`,
+    `Main entrance: ${fd.mainFacing || '—'}  |  Surrounding roads: ${fd.roads || '—'}`,
+    '',
+    `North: ${fd.north||'—'}  |  South: ${fd.south||'—'}  |  East: ${fd.east||'—'}  |  West: ${fd.west||'—'}`,
+    `NE (Ishaan): ${fd.ne||'—'}  |  SE (Agni): ${fd.se||'—'}  |  SW (Nairutya): ${fd.sw||'—'}  |  NW (Vayavya): ${fd.nw||'—'}`,
+    `Brahmasthana (centre): ${fd.center||'—'}`,
+    '',
+    `Underground tank: ${fd.sump}  |  Overhead tank: ${fd.oht}`,
+    `Borewell: ${fd.borewell}  |  Stove direction: ${fd.stove||'—'}`,
+    `Staircase: ${fd.stair}  |  Electric meter: ${fd.electric}`,
+    '',
+    `Slope: ${fd.slope}  |  Main door: ${fd.mainDoor||'—'}`,
+    `Sunlight from: ${fd.sunlight}  |  Corner cut: ${fd.cutCorner}`,
+    fd.problems ? `\nProblems: ${fd.problems}` : '',
+    fd.extra ? `Additional info: ${fd.extra}` : '',
+  ].filter(l => l !== undefined);
+  document.getElementById('summaryBox').textContent = lines.join('\n');
+}
+
+const loadMsgs = [
+  'Consulting classical Vastu Shastra texts...', 'Mapping Vastu Purusha Mandala zones...', 'Checking Pancha Bhuta elemental balance...', 'Identifying doshas across all 16 directions...', 'Computing remedy priorities...', 'Preparing your expert report...'
+];
+
+async function generateReport() {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('loadingWrap').style.display = 'block';
+  document.getElementById('reportWrap').classList.remove('visible');
+  document.getElementById('errorBanner').style.display = 'none';
+
+  let mi = 0;
+  const msgEl = document.getElementById('loadingMsg');
+  const interval = setInterval(() => { mi = (mi + 1) % loadMsgs.length; msgEl.textContent = loadMsgs[mi]; }, 2800);
+
+  const system = `You are a highly experienced Vastu Shastra expert and pandit with 30+ years of practical experience, based on classical Indian texts: Manasara, Mayamata, Brihat Samhita, Vishwakarma Prakash, and Vastu Vidya. You provide the equivalent of a full in-person consultation with a senior Vastu expert.
+
+Your analysis must be:
+1. Deeply rooted in classical Indian Vastu Shastra — not feng shui, not Western design
+2. Practical and actionable — give real, specific remedies not vague suggestions
+3. Honest — if there are serious doshas, name them clearly with their classical Sanskrit names
+4. Structured as a formal expert report
+
+Classical rules you apply:
+- Vastu Purusha Mandala: 45 energy fields, ruling deities per zone
+- 8 directions: Kubera (N-wealth), Yama (S-death/stability), Indra (E-prosperity), Varuna (W-water), Ishaan (NE-divinity/water), Agni (SE-fire/energy), Nairutya (SW-earth/stability), Vayavya (NW-air/movement)
+- Brahmasthana: sacred centre — must remain open; toilets/stairs/pillars here are critical doshas
+- Pancha Bhuta placements: Space (centre), Air (NW), Fire (SE), Water (NE), Earth (SW)
+- Ideal room positions: Master bedroom=SW, Kitchen=SE(ideal) or NW, Pooja/temple=NE, Study=NE or North, Living room=North or East, Bathroom=NW or West, Storeroom=South or West
+- Water rules: sump/borewell must be in NE; overhead tank in SW or West; water in SE, S, or SW = severe dosha (Agni-Jal conflict)
+- Staircase: allowed only in South, West, or SW — never in NE, never in centre
+- Slope: floor/land sloping towards NE = auspicious (wealth flow); towards SW = bad
+- Main door auspiciousness: North=good(Kubera), NE=very good, East=good(Indra), South=inauspicious(Yama), SW=very bad
+- Heavy structures, master bedroom, vault/safe = SW (earth element, stability, grounding)
+- NE corner cut = one of the gravest possible doshas (Ishaan khanda = cuts divine energy)
+- L-shaped plots: the missing zone's effects must be described
+- Toilet in NE = Ishaan dosha (severe, affects health, divinity, clarity)
+- Kitchen in NE = Agni-Jal virodha (fire-water conflict, causes illness and disputes)
+- Staircase in NE = blocks Ishaan energy (causes mental issues, financial loss)
+
+For every dosha give:
+1. Classical Sanskrit name of the dosha
+2. Which element/deity is disturbed
+3. Real-world effects: health, wealth, relationships, career, family peace
+4. Severity: Critical / Major / Minor
+5. Remedy: both structural AND non-structural (yantras, plants, colours, crystals, remedial placement)
+6. Consequence of ignoring (short-term and long-term)
+
+Output format — use EXACTLY this structure:
+
+VASTU COMPATIBILITY SCORE: [number]/100
+
+OVERALL ASSESSMENT:
+[3-4 lines of honest, frank overall assessment of this property's Vastu condition]
+
+ZONE-BY-ZONE ANALYSIS:
+[Analyse each zone provided — note both issues and what is correct]
+
+DOSHAS IDENTIFIED:
+[Each dosha: classical name, severity tag, effects, remedy, consequence if ignored]
+
+WHAT-IF-IGNORED SUMMARY:
+[Honest, frank summary of long-term consequences of not correcting the doshas]
+
+PRIORITISED ACTION PLAN:
+Tier 1 – Immediate (this week, low or no cost):
+[numbered list]
+
+Tier 2 – Medium-term (1–3 months):
+[numbered list]
+
+Tier 3 – Structural (long-term renovations if required):
+[numbered list]
+
+AUSPICIOUS ELEMENTS IN THIS PROPERTY:
+[Acknowledge what is already correct — give credit where due]
+
+PANDIT'S FINAL NOTE:
+[A personal, senior-expert closing message — frank, caring, practical, like a trusted family pandit speaking]`;
+
+  const user = `Please analyse this property and generate the complete Vastu expert report.
+
+PROPERTY:
+Type: ${fd.propType} | Size: ${fd.propSize||'not specified'} | Shape: ${fd.propShape||'not specified'}
+Main entrance facing: ${fd.mainFacing||'not specified'}
+Surrounding roads: ${fd.roads||'not specified'}
+
+ROOM LAYOUT:
+North: ${fd.north||'not specified'} | South: ${fd.south||'not specified'}
+East: ${fd.east||'not specified'} | West: ${fd.west||'not specified'}
+NE (Ishaan kona): ${fd.ne||'not specified'}
+SE (Agni kona): ${fd.se||'not specified'}
+SW (Nairutya kona): ${fd.sw||'not specified'}
+NW (Vayavya kona): ${fd.nw||'not specified'}
+Brahmasthana (centre): ${fd.center||'not specified'}
+
+WATER & FIRE ELEMENTS:
+Underground tank/sump: ${fd.sump} | Overhead tank: ${fd.oht}
+Borewell/well: ${fd.borewell} | Swimming pool: ${fd.pool}
+Stove direction: ${fd.stove||'not specified'} | Electric meter/generator: ${fd.electric}
+
+STRUCTURAL:
+Staircase: ${fd.stair} | Heavy storage/vault: ${fd.vault}
+
+SLOPE & LIGHT & DOORS:
+Slope: ${fd.slope} | Main door: ${fd.mainDoor||'not specified'}
+Sunlight from: ${fd.sunlight} | Corner cut: ${fd.cutCorner}
+
+PROBLEMS BEING EXPERIENCED: ${fd.problems||'none mentioned'}
+ADDITIONAL INFORMATION: ${fd.extra||'none'}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system, messages: [{ role: 'user', content: user }] })
+    });
+    clearInterval(interval);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error?.message || 'API error');
+    reportText = data.content?.map(b => b.text || '').join('') || '';
+
+    const scoreMatch = reportText.match(/VASTU COMPATIBILITY SCORE:\s*(\d+)/i);
+    const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
+
+    document.getElementById('loadingWrap').style.display = 'none';
+    document.getElementById('reportWrap').classList.add('visible');
+
+    if (score !== null) {
+      document.getElementById('scoreNum').textContent = score;
+      const banner = document.getElementById('scoreBanner');
+      const rating = document.getElementById('scoreRating');
+      if (score >= 75) { banner.style.background = 'linear-gradient(135deg,#0d4f3c,#1D9E75)'; rating.textContent = 'Good Vastu'; }
+      else if (score >= 50) { banner.style.background = 'linear-gradient(135deg,#6b3a00,#BA7517)'; rating.textContent = 'Moderate — Remedies Required'; }
+      else { banner.style.background = 'linear-gradient(135deg,#5a0f0f,#A32D2D)'; rating.textContent = 'Severe Doshas — Urgent Attention Needed'; }
+    }
+    document.getElementById('reportBody').textContent = reportText;
+  } catch (e) {
+    clearInterval(interval);
+    document.getElementById('loadingWrap').style.display = 'none';
+    document.getElementById('reportWrap').classList.add('visible');
+    document.getElementById('reportBody').style.display = 'none';
+    document.getElementById('scoreBanner').style.display = 'none';
+    const eb = document.getElementById('errorBanner');
+    eb.style.display = 'block';
+    eb.textContent = 'Report generation failed: ' + e.message + '. Please try again.';
+  }
+}
+
+function downloadPDF() {
+  if (!reportText) return;
+  const btn = document.getElementById('pdfBtn');
+  btn.textContent = 'Generating PDF...'; btn.disabled = true;
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pW = doc.internal.pageSize.getWidth();
+    const pH = doc.internal.pageSize.getHeight();
+    const M = 18; const cW = pW - M * 2;
+    let y = M;
+    const newPage = () => { doc.addPage(); y = M; };
+    const checkY = (n) => { if (y + n > pH - M) newPage(); };
+
+    doc.setFillColor(13, 79, 60);
+    doc.rect(0, 0, pW, 24, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(15);
+    doc.text('Vastu AI — Expert Property Report', M, 15);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}), pW-M, 15, {align:'right'});
+    y = 32;
+
+    if (fd.propType) {
+      doc.setTextColor(80,80,80); doc.setFontSize(10);
+      doc.text([fd.propType, fd.propSize, fd.propShape].filter(Boolean).join(' · '), M, y);
+      y += 9;
+    }
+
+    const sm = reportText.match(/VASTU COMPATIBILITY SCORE:\s*(\d+)/i);
+    if (sm) {
+      const s = parseInt(sm[1]);
+      const col = s >= 75 ? [13,79,60] : s >= 50 ? [107,58,0] : [90,15,15];
+      checkY(22);
+      doc.setFillColor(...col);
+      doc.roundedRect(M, y, cW, 16, 3, 3, 'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+      doc.text(`Vastu Compatibility Score: ${s}/100`, pW/2, y+10.5, {align:'center'});
+      y += 22;
+    }
+
+    const headers = ['OVERALL ASSESSMENT','ZONE-BY-ZONE ANALYSIS','DOSHAS IDENTIFIED','WHAT-IF-IGNORED SUMMARY','PRIORITISED ACTION PLAN','AUSPICIOUS ELEMENTS',"PANDIT'S FINAL NOTE"];
+    for (const line of reportText.split('\n')) {
+      const t = line.trim();
+      if (!t || t.match(/^VASTU COMPATIBILITY SCORE:/i)) continue;
+      const isH = headers.some(h => t.toUpperCase().startsWith(h));
+      const isTier = t.match(/^Tier \d/i);
+      if (isH) {
+        checkY(14); y += 3;
+        doc.setFillColor(232,247,241); doc.rect(M, y-5, cW, 10, 'F');
+        doc.setTextColor(15,110,86); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+        doc.text(t, M+3, y+1); y += 9;
+        doc.setTextColor(40,40,40); doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+      } else if (isTier) {
+        checkY(8); y += 2;
+        doc.setTextColor(24,95,165); doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+        doc.text(t, M, y); y += 6;
+        doc.setTextColor(40,40,40); doc.setFont('helvetica','normal');
+      } else {
+        doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
+        const wrapped = doc.splitTextToSize(t, cW);
+        for (const wl of wrapped) { checkY(6); doc.text(wl, M, y); y += 5.5; }
+        y += 1;
+      }
+    }
+    const tot = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= tot; p++) {
+      doc.setPage(p); doc.setFontSize(8); doc.setTextColor(160,160,160);
+      doc.text(`Vastu AI Report  ·  Page ${p} of ${tot}  ·  vastu-ai`, pW/2, pH-8, {align:'center'});
+    }
+    doc.save(`vastu_report_${Date.now()}.pdf`);
+  } catch(e) { alert('PDF error: ' + e.message); }
+  btn.textContent = '⬇ Download PDF Report'; btn.disabled = false;
+}
+
+function resetAll() {
+  reportText = '';
+  document.getElementById('reportWrap').classList.remove('visible');
+  document.getElementById('reportBody').style.display = 'block';
+  document.getElementById('scoreBanner').style.display = 'block';
+  goStep(0);
+}
+</script>
+</body>
+</html>
